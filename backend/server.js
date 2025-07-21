@@ -1,11 +1,13 @@
 import express from "express";
 import { config } from "dotenv";
 import { sql } from "./config/db.js";
+import rateLimiter from "./middleware/rateLimiter.js";
 
 config();
 
 const app = express();
 app.use(express.json());
+app.use(rateLimiter)
 const PORT = process.env.PORT || 5001;
 
 async function initDB() {
@@ -18,7 +20,7 @@ async function initDB() {
             category VARCHAR(255) NOT NULL,
             created_at DATE NOT NULL DEFAULT CURRENT_DATE
         )`;
-    console.log("Database created successfully");
+    console.log("Database Created Successfully");
   } catch (error) {
     console.log(error);
     process.exit(1);
@@ -29,20 +31,18 @@ app.get("/", (req, res) => {
   res.send("it is me");
 });
 
-app.get("/api/transactions/:userId",async(req,res)=>{
-    try {
-        
-        const {userId} = req.params;
-        const transactions = await sql`SELECT * FROM transactions WHERE user_id = ${userId} ORDER BY created_at DESC`
-        
-        res.status(200).json(transactions);
-    } catch (error) {
-      console.log(error);  
-      res.status(500).json("Internal Error");
+app.get("/api/transactions/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const transactions =
+      await sql`SELECT * FROM transactions WHERE user_id = ${userId} ORDER BY created_at DESC`;
 
-    }
-})
-
+    res.status(200).json(transactions);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json("Internal Error");
+  }
+});
 
 app.post("/api/transactions", async (req, res) => {
   try {
@@ -60,20 +60,48 @@ app.post("/api/transactions", async (req, res) => {
   }
 });
 
-app.delete("/api/transactions/:id",async (req,res) => {
-try {
-    const {id} = req.params;
-    if(!id){
-        res.status(400).json({message:"id required"})
+app.delete("/api/transactions/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "id required" });
     }
-  const transation =   await sql` delete from transactions where id = ${id} RETURNING *`
-    res.status(200).json({message:"Delete successfully"})
-    
-} catch (error) {
+    const transation =
+      await sql` delete from transactions where id = ${id} RETURNING *`;
+    res.status(200).json({ message: "Delete successfully" });
+  } catch (error) {
     res.status(500).json("Internal Error");
-}
-    
+  }
+});
+
+app.get("/api/transactions/summary/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log(userId)
+    const balanceResult = await sql`
+SELECT COALESCE(SUM(amount),0) as balance FROM transactions WHERE user_id =${userId}
+`;
+    const incomeResult = await sql`
+SELECT COALESCE(SUM(amount),0) as income FROM transactions WHERE user_id = ${userId} AND amount>0
+
+`;
+    const expenseResult = await sql`
+SELECT COALESCE(SUM(amount),0) as expense FROM transactions WHERE user_id = ${userId} AND amount<0
+
+`;
+
+res.status(200).json({
+  balance:balanceResult[0].balance,
+  income:incomeResult[0].income,
+  expense:expenseResult[0].expense
+
 })
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 initDB().then(() => {
   app.listen(PORT, () => {
