@@ -27,7 +27,9 @@ async function initDB() {
     process.exit(1);
   }
 }
-
+app.get("/",(req,res)=>{
+  res.json("hey bro")
+})
 app.use("/api", router);
 
 initDB().then(() => {
