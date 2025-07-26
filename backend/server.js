@@ -3,12 +3,14 @@ import { config } from "dotenv";
 import { sql } from "./config/db.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 import router from "./routes/transactionRoute.js";
+import job from "./config/cron.js";
 
 config();
 
 const app = express();
 app.use(express.json());
 app.use(rateLimiter);
+if(process.env.NODE_ENV==="production") job.start();
 const PORT = process.env.PORT || 5001;
 
 async function initDB() {
