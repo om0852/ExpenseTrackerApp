@@ -4,6 +4,8 @@ import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import React, { useState } from "react";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { styles } from "../../assets/styles/auth.styles";
+import { Ionicons } from "@expo/vector-icons";
+import { COLORS } from "../../constants/colors";
 
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -29,6 +31,7 @@ export default function Page() {
       if (signInAttempt.status === "complete") {
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace("/");
+        setError("")
       } else {
         // If the status isn't complete, check why. User might need to
         // complete further steps.
