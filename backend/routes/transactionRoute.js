@@ -9,7 +9,6 @@ router.get("/", (req, res) => {
   });
   
   router.get("/transactions/:userId", async (req, res) => {
-    console.log(user_id)
     try {
       const { userId } = req.params;
       const transactions =
