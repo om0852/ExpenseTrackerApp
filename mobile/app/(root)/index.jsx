@@ -11,8 +11,8 @@ export default function Page() {
     useTransaction(user.id);
   useEffect(() => {
     loadData();
-    console.log(transactions);
   }, [user.id]);
+  console.log(transactions, summary);
   return (
     <View>
       <SignedIn>
